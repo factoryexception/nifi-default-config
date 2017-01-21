@@ -1,0 +1,13 @@
+[Unit]
+Description=Apache NiFi
+After=network.target
+
+[Service]
+User=nifi
+PIDFile=/var/lib/nifi/run/nifi.pid
+ExecStartPre=/var/lib/nifi/bin/nifi.properties.sh
+ExecStart=/var/lib/nifi/bin/nifi.sh start
+ExecStop=/var/lib/nifi/bin/nifi.sh stop
+
+[Install]
+WantedBy=multi-user.target
