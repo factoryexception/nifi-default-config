@@ -20,14 +20,14 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>rpm-maven-plugin</artifactId>
-        <version>${rpm.maven.plugin}</version>
+        <groupId>de.dentrassi.maven</groupId>
+        <artifactId>rpm</artifactId>
+        <version>1.1.0</version>
         <executions>
           <execution>
-            <id>generate-rpm</id>
+            <id>attach-rpm</id>
             <goals>
-              <goal>attached-rpm</goal>
+              <goal>rpm</goal>
             </goals>
           </execution>
         </executions>
@@ -35,74 +35,123 @@
           <license>${rpm.configuration.license}</license>
           <packager>${project.groupId}</packager>
           <group>${rpm.configuration.group}</group>
-          <name>${project.artifactId}</name>
           <needarch>noarch</needarch>
-          <targetOS>linux</targetOS>
-          <defaultDirmode>755</defaultDirmode>
-          <defaultFilemode>644</defaultFilemode>
-          <defaultUsername>${rpm.configuration.username}</defaultUsername>
-          <defaultGroupname>${rpm.configuration.username}</defaultGroupname>
+          <operatingSystem>linux</operatingSystem>
+          <skipSigning>true</skipSigning>
           <requires>
             <require>nifi-distribution</require>
           </requires>
-          <preinstallScriptlet>
-            <fileEncoding>UTF-8</fileEncoding>
-            <scriptFile>${scriptSourceDirectory}/preinstall.sh</scriptFile>
-          </preinstallScriptlet>
-          <postinstallScriptlet>
-            <fileEncoding>UTF-8</fileEncoding>
-            <scriptFile>${scriptSourceDirectory}/postinstall.sh</scriptFile>
-          </postinstallScriptlet>
-          <mappings>
-            <mapping>
-              <directory>/etc/systemd/system</directory>
-              <directoryIncluded>false</directoryIncluded>
-              <sources>
-                <source>
-                  <location>${rpmSourceDirectory}/etc/systemd/system</location>
-                </source>
-              </sources>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}</directory>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}</directory>
-              <sources>
-                <softlinkSource>
-                  <location>${nifi.distribution.directory}/lib</location>
-                </softlinkSource>
-                <softlinkSource>
-                  <location>${nifi.distribution.directory}/docs</location>
-                </softlinkSource>
-              </sources>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}/conf</directory>
-              <directoryIncluded>true</directoryIncluded>
-              <sources>
-                <source>
-                  <location>${rpmSourceDirectory}/${nifi.home.directory}/conf</location>
-                </source>
-              </sources>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}/bin</directory>
-              <directoryIncluded>true</directoryIncluded>
-              <filemode>775</filemode>
-              <sources>
-                <source>
-                  <location>${rpmSourceDirectory}/${nifi.home.directory}/bin</location>
-                </source>
-              </sources>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}/bin</directory>
-            </mapping>
-            <mapping>
-              <directory>${nifi.home.directory}/lib_custom</directory>
-            </mapping>
-          </mappings>
+          <prefixes>
+            <prefix>${rpm.prefix}</prefix>
+          </prefixes>
+          <rulesets>
+            <ruleset>
+              <id>default</id>
+              <rules>
+                <rule>
+                  <when>
+                    <type>directory</type>
+                  </when>
+                  <mode>0755</mode>
+                  <user>${rpm.configuration.username}</user>
+                  <group>${rpm.configuration.groupname}</group>
+                </rule>
+                <rule>
+                  <when>
+                    <type>file</type>
+                  </when>
+                  <mode>0644</mode>
+                  <user>${rpm.configuration.username}</user>
+                  <group>${rpm.configuration.groupname}</group>
+                </rule>
+                <rule>
+                  <when>
+                    <type>file</type>
+                    <prefix>${nifi.home.directory}/bin</prefix>
+                  </when>
+                  <mode>0755</mode>
+                  <user>${rpm.configuration.username}</user>
+                  <group>${rpm.configuration.groupname}</group>
+                </rule>
+                <rule>
+                  <when>
+                    <type>file</type>
+                    <prefix>${nifi.home.directory}/lib</prefix>
+                  </when>
+                  <mode>0755</mode>
+                  <user>${rpm.configuration.username}</user>
+                  <group>${rpm.configuration.groupname}</group>
+                </rule>
+                <rule>
+                  <when>
+                    <type>file</type>
+                    <prefix>${nifi.home.directory}/docs</prefix>
+                  </when>
+                  <mode>0755</mode>
+                  <user>${rpm.configuration.username}</user>
+                  <group>${rpm.configuration.groupname}</group>
+                </rule>
+              </rules>
+            </ruleset>
+          </rulesets>
+          <beforeInstallation>
+            <file>${scriptSourceDirectory}/preinstall.sh</file>
+          </beforeInstallation>
+          <afterInstallation>
+            <file>${scriptSourceDirectory}/postinstall.sh</file>
+          </afterInstallation>
+          <entries>
+            <entry>
+              <name>/etc/systemd/system/nifi.service</name>
+              <file>${rpmSourceDirectory}/etc/systemd/system/nifi.service</file>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}</name>
+              <directory>true</directory>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/lib_custom</name>
+              <directory>true</directory>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/conf</name>
+              <directory>true</directory>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/bin</name>
+              <directory>true</directory>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/lib</name>
+              <linkTo>${nifi.distribution.directory}/lib</linkTo>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/docs</name>
+              <linkTo>${nifi.distribution.directory}/docs</linkTo>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/conf</name>
+              <collect>
+                <from>${rpmSourceDirectory}/${nifi.home.directory}/conf</from>
+                <directories>true</directories>
+              </collect>
+              <ruleset>default</ruleset>
+            </entry>
+            <entry>
+              <name>${nifi.home.directory}/bin</name>
+              <collect>
+                <from>${rpmSourceDirectory}/${nifi.home.directory}/bin</from>
+                <directories>true</directories>
+              </collect>
+              <ruleset>default</ruleset>
+            </entry>
+          </entries>
         </configuration>
       </plugin>
     </plugins>
